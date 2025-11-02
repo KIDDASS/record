@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Discord VC Live</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom, #0f172a, #020617);
+      color: #fff;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(8px);
+      padding: 1.5rem 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #94a3b8;
+      margin-bottom: 1.5rem;
+    }
+    code {
+      background: #1e293b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #38bdf8;
+    }
+    .guild {
+      background: rgba(71, 85, 105, 0.4);
+      padding: 1rem;
+      border-radius: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .guild-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .users {
+      margin-top: 0.5rem;
+    }
+    .user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #475569;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Discord VC Live</h1>
+    <p>Shows who is currently connected to your Discord voice channels.</p>
+    <div id="status">Loading...</div>
+    <div id="vc-data"></div>
+    <footer>API endpoint: <code id="api-url"></code></footer>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api/voice'; // Change to your hosted API URL
+    document.getElementById('api-url').textContent = API_URL;
+
+    async function fetchVC() {
+      try {
+        const res = await fetch(API_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Network error');
+        const data = await res.json();
+        renderData(data);
+      } catch (err) {
+        document.getElementById('status').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    function renderData(data) {
+      const vcContainer = document.getElementById('vc-data');
+      vcContainer.innerHTML = '';
+
+      const guilds = Object.entries(data);
+      if (guilds.length === 0) {
+        document.getElementById('status').textContent = 'No active voice users.';
+        return;
+      }
+
+      document.getElementById('status').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+      guilds.forEach(([guildId, users]) => {
+        const guildDiv = document.createElement('div');
+        guildDiv.className = 'guild';
+
+        const header = document.createElement('div');
+        header.className = 'guild-header';
+        header.innerHTML = `<strong>Guild ID:</strong> ${guildId} <span>${users.length} in VC</span>`;
+        guildDiv.appendChild(header);
+
+        const usersDiv = document.createElement('div');
+        usersDiv.className = 'users';
+
+        users.forEach(u => {
+          const userDiv = document.createElement('div');
+          userDiv.className = 'user';
+
+          const avatar = document.createElement('div');
+          avatar.className = 'avatar';
+          avatar.textContent = u.charAt(0).toUpperCase();
+
+          const name = document.createElement('div');
+          name.textContent = u;
+
+          userDiv.appendChild(avatar);
+          userDiv.appendChild(name);
+          usersDiv.appendChild(userDiv);
+        });
+
+        guildDiv.appendChild(usersDiv);
+        vcContainer.appendChild(guildDiv);
+      });
+    }
+
+    fetchVC();
+    setInterval(fetchVC, 5000);
+  </script>
+</body>
+</html>
